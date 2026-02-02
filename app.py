@@ -20,9 +20,6 @@ st.set_page_config(layout="wide", page_title="Quantum Circuit Simulator")
 # --- Session State Initialization ---
 if "undo_stack" not in st.session_state:
     st.session_state.undo_stack = []
-if "final_circuit" not in st.session_state:
-    st.session_state.final_circuit = None
-
 
 # --- Gate Definitions ---
 GATE_DEFINITIONS = {
@@ -387,10 +384,13 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                             getattr(qc, gate.lower())(q)
             
             st.success("✅ Simulation complete!")
-            st.session_state.final_circuit = qc
-            
+
             # --- Circuit Visualization ---
-            
+            #st.header("Circuit Diagram")
+            #fig, ax = plt.subplots()
+            #qc.draw('mpl', ax=ax, style='iqx')
+            #st.pyplot(fig)
+            #plt.close(fig)
             st.subheader("Circuit Diagram")
 
             qc_vis = qc.copy()
@@ -544,63 +544,6 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
-
-# ==================================================
-# === LIVE ANALYSIS (RUNS ON EVERY RERUN) ==========
-# ==================================================
-
-if st.session_state.final_circuit is not None:
-    qc = st.session_state.final_circuit
-
-    # --- Circuit Visualization ---
-    st.subheader("Circuit Diagram")
-    qc_vis = qc.copy()
-    qc_vis.measure_all()
-    fig_circuit = qc_vis.draw(
-        output='mpl',
-        style={'fontsize': 12, 'subfontsize': 10, 'linewidth': 1.2},
-        fold=-1
-    )
-    st.pyplot(fig_circuit)
-
-    # --- Density Matrix Simulation (LIVE NOISE) ---
-    dm_simulator = AerSimulator(
-        method="density_matrix",
-        noise_model=(
-            build_noise_model_v2(depol_p, decay_f, phase_g, tsp_01, tsp_10)
-            if enable_noise else None
-        )
-    )
-
-    qc_dm = qc.copy()
-    qc_dm.save_density_matrix()
-    dm_job = dm_simulator.run(qc_dm)
-    final_dm = DensityMatrix(dm_job.result().data(0)["density_matrix"])
-
-    # --- Per-Qubit Analysis ---
-    st.header("Ideal State Analysis (per Qubit)")
-    cols = st.columns(qc.num_qubits)
-
-    for i in range(qc.num_qubits):
-        q_list = list(range(qc.num_qubits))
-        q_list.remove(i)
-        reduced_dm = partial_trace(final_dm, q_list)
-
-        x = np.real(np.trace(reduced_dm.data @ np.array([[0, 1], [1, 0]])))
-        y = np.real(np.trace(reduced_dm.data @ np.array([[0, -1j], [1j, 0]])))
-        z = np.real(np.trace(reduced_dm.data @ np.array([[1, 0], [0, -1]])))
-
-        purity = np.real(np.trace(reduced_dm.data @ reduced_dm.data))
-        state_eq = format_quantum_state_equation(purity, x, y, z)
-
-        with cols[i]:
-            st.subheader(f"Qubit {i}")
-            st.latex(state_eq)
-
-            fig = create_interactive_bloch_sphere([x, y, z])
-            st.plotly_chart(fig, use_container_width=True)
-
-            st.metric("Purity", f"{purity:.3f}")
 
 
 
