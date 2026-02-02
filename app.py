@@ -587,6 +587,15 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                         st.text("Reduced Density Matrix:")
                         # Use st.dataframe to display the matrix cleanly
                         st.dataframe(reduced_dm.data)
+
+                noise_params = {
+                    "enabled": enable_noise,
+                    "depolarization": depol_p,
+                    "amplitude_damping": decay_f,
+                    "phase_damping": phase_g,
+                    "readout_01": tsp_01,
+                    "readout_10": tsp_10
+                }
                 # =======================
                 # 📄 REPORT GENERATION
                 # =======================
@@ -615,21 +624,13 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     file_name="quantum_simulation_report.txt",
                     mime="text/plain"
                 )
-
-                noise_params = {
-                    "enabled": enable_noise,
-                    "depolarization": depol_p,
-                    "amplitude_damping": decay_f,
-                    "phase_damping": phase_g,
-                    "readout_01": tsp_01,
-                    "readout_10": tsp_10
-                }
                       
 
     except ValueError as e:
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
