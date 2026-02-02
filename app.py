@@ -280,6 +280,45 @@ def format_quantum_state_equation(purity, x, y, z, tol=1e-6):
         rf"{alpha:.3f}|0\rangle + "
         rf"e^{{i\phi}}\,{beta:.3f}|1\rangle"
     )
+def generate_report(qc, per_qubit_data, noise_params):
+    report = []
+
+    report.append("QUANTUM STATE VISUALIZATION REPORT")
+    report.append("=" * 45)
+
+    # ---- Circuit diagram (ASCII) ----
+    report.append("\nCIRCUIT DIAGRAM (ASCII):")
+    report.append("-" * 30)
+    try:
+        report.append(qc.draw(output="text"))
+    except Exception:
+        report.append("Circuit diagram unavailable.")
+
+    # ---- OpenQASM ----
+    report.append("\nOPENQASM CODE:")
+    report.append("-" * 30)
+    report.append(qc.qasm())
+
+    # ---- Noise parameters ----
+    report.append("\nNOISE SETTINGS:")
+    report.append("-" * 30)
+    for k, v in noise_params.items():
+        report.append(f"{k}: {v}")
+
+    # ---- Per-qubit analysis ----
+    report.append("\nPER-QUBIT ANALYSIS:")
+    report.append("-" * 30)
+
+    for q in per_qubit_data:
+        report.append(f"\nQubit q{q['index']}")
+        report.append("-" * 20)
+        report.append(f"Bloch Vector: {q['bloch']}")
+        report.append(f"Purity: {q['purity']:.4f}")
+        report.append(f"Reduced State Equation: {q['equation']}")
+        report.append("Reduced Density Matrix:")
+        report.append(str(q['rho']))
+
+    return "\n".join(report)
 
 
 # --- Streamlit UI ---
@@ -494,6 +533,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
 
 
             # --- Display Per-Qubit Information ---
+            per_qubit_data = []
             cols = st.columns(num_qubits)
             for i in range(num_qubits):
                 # Isolate the density matrix for the current qubit
@@ -514,6 +554,15 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                 # Calculate purity
                 purity = np.real(np.trace(reduced_dm.data @ reduced_dm.data))
                 state_eq = format_quantum_state_equation(purity, x, y, z)
+
+                per_qubit_data.append({
+                    "qubit": i,
+                    "bloch": (x, y, z),
+                    "purity": purity,
+                    "equation": state_eq,
+                    "rho": reduced_dm.data
+                })
+
                 st.markdown(f"**Reduced State Equation (Qubit q{i}):**")
                 st.latex(state_eq)
 
@@ -538,12 +587,21 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                         st.text("Reduced Density Matrix:")
                         # Use st.dataframe to display the matrix cleanly
                         st.dataframe(reduced_dm.data)
+                noise_params = {
+                    "enabled": enable_noise,
+                    "depolarization": depol_p,
+                    "amplitude_damping": decay_f,
+                    "phase_damping": phase_g,
+                    "readout_01": tsp_01,
+                    "readout_10": tsp_10
+                }
                       
 
     except ValueError as e:
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
