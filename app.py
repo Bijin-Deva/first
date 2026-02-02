@@ -587,6 +587,35 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                         st.text("Reduced Density Matrix:")
                         # Use st.dataframe to display the matrix cleanly
                         st.dataframe(reduced_dm.data)
+                # =======================
+                # 📄 REPORT GENERATION
+                # =======================
+                
+                report_lines = []
+                report_lines.append("Quantum Circuit Simulation Report\n")
+                report_lines.append("=" * 40 + "\n")
+                
+                report_lines.append("Noise Parameters:\n")
+                for k, v in noise_params.items():
+                    report_lines.append(f"- {k}: {v}\n")
+                
+                report_lines.append("\nPer-Qubit Analysis:\n")
+                
+                for q in per_qubit_data:
+                    report_lines.append(f"\nQubit q{q['qubit']}:\n")
+                    report_lines.append(f"Purity: {q['purity']:.4f}\n")
+                    report_lines.append(f"Bloch Vector: {q['bloch']}\n")
+                    report_lines.append(f"State Equation:\n{q['equation']}\n")
+                
+                report_text = "".join(report_lines)
+                
+                st.download_button(
+                    label="📥 Download Simulation Report",
+                    data=report_text,
+                    file_name="quantum_simulation_report.txt",
+                    mime="text/plain"
+                )
+
                 noise_params = {
                     "enabled": enable_noise,
                     "depolarization": depol_p,
@@ -601,6 +630,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
