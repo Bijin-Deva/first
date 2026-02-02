@@ -280,45 +280,6 @@ def format_quantum_state_equation(purity, x, y, z, tol=1e-6):
         rf"{alpha:.3f}|0\rangle + "
         rf"e^{{i\phi}}\,{beta:.3f}|1\rangle"
     )
-def generate_report(qc, per_qubit_data, noise_params):
-    report = []
-
-    report.append("QUANTUM STATE VISUALIZATION REPORT")
-    report.append("=" * 45)
-
-    # ---- Circuit diagram (ASCII) ----
-    report.append("\nCIRCUIT DIAGRAM (ASCII):")
-    report.append("-" * 30)
-    try:
-        report.append(qc.draw(output="text"))
-    except Exception:
-        report.append("Circuit diagram unavailable.")
-
-    # ---- OpenQASM ----
-    report.append("\nOPENQASM CODE:")
-    report.append("-" * 30)
-    report.append(qc.qasm())
-
-    # ---- Noise parameters ----
-    report.append("\nNOISE SETTINGS:")
-    report.append("-" * 30)
-    for k, v in noise_params.items():
-        report.append(f"{k}: {v}")
-
-    # ---- Per-qubit analysis ----
-    report.append("\nPER-QUBIT ANALYSIS:")
-    report.append("-" * 30)
-
-    for q in per_qubit_data:
-        report.append(f"\nQubit q{q['index']}")
-        report.append("-" * 20)
-        report.append(f"Bloch Vector: {q['bloch']}")
-        report.append(f"Purity: {q['purity']:.4f}")
-        report.append(f"Reduced State Equation: {q['equation']}")
-        report.append("Reduced Density Matrix:")
-        report.append(str(q['rho']))
-
-    return "\n".join(report)
 
 
 # --- Streamlit UI ---
@@ -596,40 +557,13 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     "readout_01": tsp_01,
                     "readout_10": tsp_10
                 }
-            # =======================
-            # 📄 REPORT GENERATION
-            # =======================
-                
-            report_lines = []
-            report_lines.append("Quantum Circuit Simulation Report\n")
-            report_lines.append("=" * 40 + "\n")
-                
-            report_lines.append("Noise Parameters:\n")
-            for k, v in noise_params.items():
-                report_lines.append(f"- {k}: {v}\n")
-                
-            report_lines.append("\nPer-Qubit Analysis:\n")
-                
-            for q in per_qubit_data:
-                report_lines.append(f"\nQubit q{q['qubit']}:\n")
-                report_lines.append(f"Purity: {q['purity']:.4f}\n")
-                report_lines.append(f"Bloch Vector: {q['bloch']}\n")
-                report_lines.append(f"State Equation:\n{q['equation']}\n")
-                
-            report_text = "".join(report_lines)
-                
-            st.download_button(
-                label="📥 Download Simulation Report",
-                data=report_text,
-                file_name="quantum_simulation_report.txt",
-                mime="text/plain"
-            )
                       
 
     except ValueError as e:
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
