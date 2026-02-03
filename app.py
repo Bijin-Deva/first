@@ -13,6 +13,13 @@ from qiskit_aer.noise import (
     phase_damping_error,
     ReadoutError
 )
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
+import tempfile
+import os
 
 
 # --- Page Configuration ---
@@ -280,6 +287,32 @@ def format_quantum_state_equation(purity, x, y, z, tol=1e-6):
         rf"{alpha:.3f}|0\rangle + "
         rf"e^{{i\phi}}\,{beta:.3f}|1\rangle"
     )
+def generate_pdf_report(circuit_img, per_qubit_data, noise_params):
+    tmp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    doc = SimpleDocTemplate(tmp_pdf.name, pagesize=A4)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph("<b>Quantum Circuit Simulation Report</b>", styles["Title"]))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("<b>Circuit Diagram</b>", styles["Heading2"]))
+    elements.append(Image(circuit_img, width=5.5*inch, height=2.5*inch))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("<b>Noise Configuration</b>", styles["Heading2"]))
+    for k, v in noise_params.items():
+        elements.append(Paragraph(f"{k}: {v}", styles["Normal"]))
+
+    for q in per_qubit_data:
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph(f"<b>Qubit {q['qubit']}</b>", styles["Heading2"]))
+        elements.append(Image(q["bloch_img"], width=2.5*inch, height=2.5*inch))
+        elements.append(Paragraph(f"Purity: {q['purity']:.4f}", styles["Normal"]))
+        elements.append(Paragraph(f"State Equation: {q['equation']}", styles["Normal"]))
+
+    doc.build(elements)
+    return tmp_pdf.name
 
 
 # --- Streamlit UI ---
@@ -386,11 +419,6 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
             st.success("✅ Simulation complete!")
 
             # --- Circuit Visualization ---
-            #st.header("Circuit Diagram")
-            #fig, ax = plt.subplots()
-            #qc.draw('mpl', ax=ax, style='iqx')
-            #st.pyplot(fig)
-            #plt.close(fig)
             st.subheader("Circuit Diagram")
 
             qc_vis = qc.copy()
@@ -408,6 +436,9 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
             )
             
             st.pyplot(fig_circuit)
+            # --- Save circuit diagram for report ---
+            tmp_circuit_img = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+            fig_circuit.savefig(tmp_circuit_img.name, dpi=300, bbox_inches="tight")
 
 
             # --- Measurement Simulation & Histogram ---
@@ -534,7 +565,12 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     # Display Bloch Sphere first
                     fig = create_interactive_bloch_sphere(bloch_vector)
                     st.plotly_chart(fig, use_container_width=True, key=f"bloch_sphere_{i}")
+                    # --- Save Bloch sphere for report ---
+                    tmp_bloch = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                    fig.write_image(tmp_bloch.name, scale=3)
+                    per_qubit_data[-1]["bloch_img"] = tmp_bloch.name
 
+                    
                     # Display analysis below the sphere
                     st.text(f"|0⟩: {prob_0:.3f}")
                     st.progress(prob_0)
@@ -557,18 +593,27 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     "readout_01": tsp_01,
                     "readout_10": tsp_10
                 }
-                      
+            st.markdown("---")
+            st.subheader("📥 Export Report")
+            
+            pdf_path = generate_pdf_report(
+                tmp_circuit_img.name,
+                per_qubit_data,
+                noise_params
+            )
+            
+            with open(pdf_path, "rb") as f:
+                st.download_button(
+                    "📄 Download Simulation Report (PDF)",
+                    f,
+                    file_name="quantum_simulation_report.pdf",
+                    mime="application/pdf",
+                    key="download_pdf_report"
+                )
+        
 
     except ValueError as e:
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
-
-
-
-
-
-
-
-
 
