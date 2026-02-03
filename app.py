@@ -621,8 +621,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     "rho": reduced_dm.data
                 })
 
-                st.markdown(f"**Reduced State Equation (Qubit q{i}):**")
-                st.latex(state_eq)
+                
 
 
                 with cols[i]:
@@ -640,7 +639,8 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     st.progress(prob_1)
                     
                     st.metric(label="Purity", value=f"{purity:.3f}")
-
+                    st.markdown(f"**Reduced State Equation (Qubit q{i}):**")
+                    st.latex(state_eq)
                     with st.expander("Details"):
                         st.text(f"Bloch Vector: ({x:.3f}, {y:.3f}, {z:.3f})")
                         st.text("Reduced Density Matrix:")
@@ -662,6 +662,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
