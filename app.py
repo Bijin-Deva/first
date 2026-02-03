@@ -589,6 +589,9 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     yaxis_title="Counts",
                 )
                 st.plotly_chart(hist_fig, use_container_width=True)
+                tmp_hist = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                hist_fig.write_image(tmp_hist.name, scale=3)
+
                 # --- Raw Counts Display ---
                 st.subheader("Raw Measurement Counts")
                 with st.expander("Show raw counts for each outcome"):
@@ -696,29 +699,52 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     "readout_01": tsp_01,
                     "readout_10": tsp_10
                 }
-            st.markdown("---")
-            st.subheader("📥 Export Report")
+            st.markdown("<div class='page-break'></div>", unsafe_allow_html=True)
+            st.header("📄 Academic Simulation Report")
+            st.subheader("Abstract")
+            st.markdown("""
+            This report presents a simulation-based analysis of a quantum circuit using
+            density matrix formalism. Reduced single-qubit states are obtained via partial
+            tracing and visualized on the Bloch sphere. The effect of quantum noise on
+            state purity and measurement statistics is analyzed.
+            """)
+            st.subheader("Quantum Circuit")
+            st.image(tmp_circuit_img.name, caption="Quantum Circuit Diagram")
+            st.subheader("Measurement Outcomes")
+            st.image(tmp_hist.name, caption="Measurement Histogram")
+            st.subheader("Single-Qubit Reduced State Analysis")
+
+            for q in per_qubit_data:
+                st.markdown("<div class='page-break'></div>", unsafe_allow_html=True)
             
-            pdf_path = generate_pdf_report(
-                tmp_circuit_img.name,
-                per_qubit_data,
-                noise_params
-            )
+                st.markdown(f"### Qubit q{q['qubit']}")
             
-            with open(pdf_path, "rb") as f:
-                st.download_button(
-                    "📄 Download Simulation Report (PDF)",
-                    f,
-                    file_name="quantum_simulation_report.pdf",
-                    mime="application/pdf",
-                    key="download_pdf_report"
+                st.image(
+                    q["bloch_img"],
+                    caption=f"Bloch Sphere Representation of Qubit q{q['qubit']}"
                 )
+            
+                st.markdown("**Reduced State Equation:**")
+                st.latex(q["equation"])
+            
+                st.markdown(f"**Purity:** {q['purity']:.4f}")
+            
+                st.markdown("**Reduced Density Matrix:**")
+                st.latex(
+                    r"\begin{bmatrix}"
+                    + f"{q['rho'][0,0]:.3f} & {q['rho'][0,1]:.3f} \\\\ "
+                    + f"{q['rho'][1,0]:.3f} & {q['rho'][1,1]:.3f}"
+                    + r"\end{bmatrix}"
+                )
+
+
         
 
     except ValueError as e:
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
