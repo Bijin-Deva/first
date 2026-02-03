@@ -307,9 +307,14 @@ def generate_pdf_report(circuit_img, per_qubit_data, noise_params):
     for q in per_qubit_data:
         elements.append(Spacer(1, 12))
         elements.append(Paragraph(f"<b>Qubit {q['qubit']}</b>", styles["Heading2"]))
-        elements.append(Image(q["bloch_img"], width=2.5*inch, height=2.5*inch))
         elements.append(Paragraph(f"Purity: {q['purity']:.4f}", styles["Normal"]))
         elements.append(Paragraph(f"State Equation: {q['equation']}", styles["Normal"]))
+
+        bx, by, bz = q["bloch"]
+        elements.append(Paragraph(
+            f"Bloch Vector: ({bx:.3f}, {by:.3f}, {bz:.3f})",
+            styles["Normal"]
+        ))
 
     doc.build(elements)
     return tmp_pdf.name
@@ -567,9 +572,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     st.plotly_chart(fig, use_container_width=True, key=f"bloch_sphere_{i}")
                     # --- Save Bloch sphere for report ---
                     tmp_bloch = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                    fig.write_image(tmp_bloch.name, scale=3)
-                    per_qubit_data[-1]["bloch_img"] = tmp_bloch.name
-
+                    
                     
                     # Display analysis below the sphere
                     st.text(f"|0⟩: {prob_0:.3f}")
@@ -616,4 +619,5 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
