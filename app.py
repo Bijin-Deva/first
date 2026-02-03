@@ -14,82 +14,6 @@ from qiskit_aer.noise import (
     ReadoutError
 )
 
-# --- Page Configuration ---
-st.set_page_config(layout="wide", page_title="Quantum Circuit Simulator")
-st.markdown("""
-<style>
-
-/* =========================
-   PRINT-ONLY CONTENT CONTROL
-   ========================= */
-
-/* Hide report-only sections during normal app use */
-.print-only {
-  display: none;
-}
-
-/* =========================
-   ACADEMIC PRINT STYLES
-   ========================= */
-@media print {
-
-  /* Show report-only sections when printing */
-  .print-only {
-    display: block;
-  }
-
-  body {
-    font-family: "Times New Roman", serif;
-    font-size: 12pt;
-    line-height: 1.5;
-    color: black;
-    overflow: visible !important;
-  }
-
-  .stApp {
-    overflow: visible !important;
-  }
-
-  /* Hide UI controls */
-  .stSidebar,
-  button,
-  input,
-  textarea {
-    display: none !important;
-  }
-
-  /* Academic headings */
-  h1 {
-    font-size: 20pt;
-    text-align: center;
-  }
-
-  h2 {
-    font-size: 16pt;
-    margin-top: 24px;
-    border-bottom: 1px solid #000;
-  }
-
-  h3 {
-    font-size: 14pt;
-    margin-top: 18px;
-  }
-
-  /* Page breaks */
-  .page-break {
-    page-break-before: always;
-    break-before: page;
-  }
-
-  /* Center figures */
-  img, canvas {
-    display: block;
-    margin: auto;
-  }
-
-}
-</style>
-""", unsafe_allow_html=True)
 
 
 # --- Session State Initialization ---
@@ -459,29 +383,6 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                             getattr(qc, gate.lower())(q)
             
             st.success("✅ Simulation complete!")
-            st.markdown('<div class="page-break"></div>', unsafe_allow_html=True)
-            st.markdown("""
-            <div class="print-only">
-            
-            <div class="page-break"></div>
-            
-            <h1>Quantum Circuit Simulation Report</h1>
-            
-            <p><b>Tool:</b> Quantum Circuit Simulator<br>
-            <b>Methodology:</b> Density Matrix & Partial Trace<br>
-            <b>Visualization:</b> Bloch Sphere Representation</p>
-            
-            <h2>Abstract</h2>
-            
-            <p>
-            This report presents a quantum circuit simulation with per-qubit reduced
-            density matrix analysis. Each qubit’s quantum state is isolated using
-            partial tracing and visualized on the Bloch sphere. Noise effects are
-            optionally included to demonstrate mixed-state behavior and purity loss.
-            </p>
-            
-            </div>
-            """, unsafe_allow_html=True)
 
 
             # --- Circuit Visualization ---
@@ -590,62 +491,64 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
 
 
 
-            # --- Display Per-Qubit Information ---
-            per_qubit_data = []
-            cols = st.columns(num_qubits)
-            for i in range(num_qubits):
-                # Isolate the density matrix for the current qubit
-                q_list = list(range(num_qubits))
-                q_list.remove(i)
-                reduced_dm = partial_trace(final_dm, q_list)
-                
-                # Calculate Bloch vector components
-                x = np.real(np.trace(reduced_dm.data @ np.array([[0, 1], [1, 0]])))
-                y = np.real(np.trace(reduced_dm.data @ np.array([[0, -1j], [1j, 0]])))
-                z = np.real(np.trace(reduced_dm.data @ np.array([[1, 0], [0, -1]])))
-                bloch_vector = [x, y, z]
+            # --- Display Per-Qubit Information ---per_qubit_data = []
+            num_per_row = 3
+            
+            for row_start in range(0, num_qubits, num_per_row):
+                # Create a new row with up to 3 columns
+                cols = st.columns(num_per_row)
+            
+                for col_idx, i in enumerate(range(row_start, min(row_start + num_per_row, num_qubits))):
+                    # Isolate the density matrix for the current qubit
+                    q_list = list(range(num_qubits))
+                    q_list.remove(i)
+                    reduced_dm = partial_trace(final_dm, q_list)
+            
+                    # Calculate Bloch vector components
+                    x = np.real(np.trace(reduced_dm.data @ np.array([[0, 1], [1, 0]])))
+                    y = np.real(np.trace(reduced_dm.data @ np.array([[0, -1j], [1j, 0]])))
+                    z = np.real(np.trace(reduced_dm.data @ np.array([[1, 0], [0, -1]])))
+                    bloch_vector = [x, y, z]
+            
+                    # Calculate probabilities
+                    prob_0 = np.real(reduced_dm.data[0, 0])
+                    prob_1 = np.real(reduced_dm.data[1, 1])
+            
+                    # Calculate purity
+                    purity = np.real(np.trace(reduced_dm.data @ reduced_dm.data))
+                    state_eq = format_quantum_state_equation(purity, x, y, z)
+            
+                    per_qubit_data.append({
+                        "qubit": i,
+                        "bloch": (x, y, z),
+                        "purity": purity,
+                        "equation": state_eq,
+                        "rho": reduced_dm.data
+                    })
+            
+                    with cols[col_idx]:
+                        st.subheader(f"Qubit {i}")
+            
+                        # Display Bloch Sphere
+                        fig = create_interactive_bloch_sphere(bloch_vector)
+                        st.plotly_chart(fig, use_container_width=True, key=f"bloch_sphere_{i}")
+            
+                        # Probabilities
+                        st.text(f"|0⟩: {prob_0:.3f}")
+                        st.progress(prob_0)
+                        st.text(f"|1⟩: {prob_1:.3f}")
+                        st.progress(prob_1)
+            
+                        # Purity + equation
+                        st.metric(label="Purity", value=f"{purity:.3f}")
+                        st.markdown(f"**Reduced State Equation (Qubit q{i}):**")
+                        st.latex(state_eq)
+            
+                        with st.expander("Details"):
+                            st.text(f"Bloch Vector: ({x:.3f}, {y:.3f}, {z:.3f})")
+                            st.text("Reduced Density Matrix:")
+                            st.dataframe(reduced_dm.data)
 
-                # Calculate probabilities from the diagonal of the reduced density matrix
-                prob_0 = np.real(reduced_dm.data[0, 0])
-                prob_1 = np.real(reduced_dm.data[1, 1])
-
-                # Calculate purity
-                purity = np.real(np.trace(reduced_dm.data @ reduced_dm.data))
-                state_eq = format_quantum_state_equation(purity, x, y, z)
-
-                per_qubit_data.append({
-                    "qubit": i,
-                    "bloch": (x, y, z),
-                    "purity": purity,
-                    "equation": state_eq,
-                    "rho": reduced_dm.data
-                })
-
-                
-
-
-                with cols[i]:
-                    st.subheader(f"Qubit {i}")
-
-                    # Display Bloch Sphere first
-                    fig = create_interactive_bloch_sphere(bloch_vector)
-                    st.plotly_chart(fig, use_container_width=True, key=f"bloch_sphere_{i}")
-                    
-                    
-                    # Display analysis below the sphere
-                    st.text(f"|0⟩: {prob_0:.3f}")
-                    st.progress(prob_0)
-                    st.text(f"|1⟩: {prob_1:.3f}")
-                    st.progress(prob_1)
-                    
-                    st.metric(label="Purity", value=f"{purity:.3f}")
-                    st.markdown(f"**Reduced State Equation (Qubit q{i}):**")
-                    st.latex(state_eq)
-                    with st.expander("Details"):
-                        st.text(f"Bloch Vector: ({x:.3f}, {y:.3f}, {z:.3f})")
-                        st.text("Reduced Density Matrix:")
-                        # Use st.dataframe to display the matrix cleanly
-                        st.dataframe(reduced_dm.data)
 
                 noise_params = {
                     "enabled": enable_noise,
@@ -662,6 +565,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
