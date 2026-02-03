@@ -491,7 +491,8 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
 
 
 
-            # --- Display Per-Qubit Information ---per_qubit_data = []
+            # --- Display Per-Qubit Information ---
+            per_qubit_data = []
             num_per_row = 3
             
             for row_start in range(0, num_qubits, num_per_row):
@@ -565,6 +566,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
