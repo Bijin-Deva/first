@@ -13,14 +13,6 @@ from qiskit_aer.noise import (
     phase_damping_error,
     ReadoutError
 )
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import inch
-from reportlab.lib.utils import ImageReader
-import tempfile
-import os
-
 
 # --- Page Configuration ---
 st.set_page_config(layout="wide", page_title="Quantum Circuit Simulator")
@@ -363,37 +355,6 @@ def format_quantum_state_equation(purity, x, y, z, tol=1e-6):
         rf"{alpha:.3f}|0\rangle + "
         rf"e^{{i\phi}}\,{beta:.3f}|1\rangle"
     )
-def generate_pdf_report(circuit_img, per_qubit_data, noise_params):
-    tmp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    doc = SimpleDocTemplate(tmp_pdf.name, pagesize=A4)
-    styles = getSampleStyleSheet()
-    elements = []
-
-    elements.append(Paragraph("<b>Quantum Circuit Simulation Report</b>", styles["Title"]))
-    elements.append(Spacer(1, 12))
-
-    elements.append(Paragraph("<b>Circuit Diagram</b>", styles["Heading2"]))
-    elements.append(Image(circuit_img, width=5.5*inch, height=2.5*inch))
-    elements.append(Spacer(1, 12))
-
-    elements.append(Paragraph("<b>Noise Configuration</b>", styles["Heading2"]))
-    for k, v in noise_params.items():
-        elements.append(Paragraph(f"{k}: {v}", styles["Normal"]))
-
-    for q in per_qubit_data:
-        elements.append(Spacer(1, 12))
-        elements.append(Paragraph(f"<b>Qubit {q['qubit']}</b>", styles["Heading2"]))
-        elements.append(Paragraph(f"Purity: {q['purity']:.4f}", styles["Normal"]))
-        elements.append(Paragraph(f"State Equation: {q['equation']}", styles["Normal"]))
-
-        bx, by, bz = q["bloch"]
-        elements.append(Paragraph(
-            f"Bloch Vector: ({bx:.3f}, {by:.3f}, {bz:.3f})",
-            styles["Normal"]
-        ))
-
-    doc.build(elements)
-    return tmp_pdf.name
 
 
 # --- Streamlit UI ---
@@ -699,44 +660,6 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     "readout_01": tsp_01,
                     "readout_10": tsp_10
                 }
-            st.markdown("<div class='page-break'></div>", unsafe_allow_html=True)
-            st.header("📄 Academic Simulation Report")
-            st.subheader("Abstract")
-            st.markdown("""
-            This report presents a simulation-based analysis of a quantum circuit using
-            density matrix formalism. Reduced single-qubit states are obtained via partial
-            tracing and visualized on the Bloch sphere. The effect of quantum noise on
-            state purity and measurement statistics is analyzed.
-            """)
-            st.subheader("Quantum Circuit")
-            st.image(tmp_circuit_img.name, caption="Quantum Circuit Diagram")
-            st.subheader("Measurement Outcomes")
-            st.image(tmp_hist.name, caption="Measurement Histogram")
-            st.subheader("Single-Qubit Reduced State Analysis")
-
-            for q in per_qubit_data:
-                st.markdown("<div class='page-break'></div>", unsafe_allow_html=True)
-            
-                st.markdown(f"### Qubit q{q['qubit']}")
-            
-                st.image(
-                    q["bloch_img"],
-                    caption=f"Bloch Sphere Representation of Qubit q{q['qubit']}"
-                )
-            
-                st.markdown("**Reduced State Equation:**")
-                st.latex(q["equation"])
-            
-                st.markdown(f"**Purity:** {q['purity']:.4f}")
-            
-                st.markdown("**Reduced Density Matrix:**")
-                st.latex(
-                    r"\begin{bmatrix}"
-                    + f"{q['rho'][0,0]:.3f} & {q['rho'][0,1]:.3f} \\\\ "
-                    + f"{q['rho'][1,0]:.3f} & {q['rho'][1,1]:.3f}"
-                    + r"\end{bmatrix}"
-                )
-
 
         
 
@@ -744,6 +667,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
