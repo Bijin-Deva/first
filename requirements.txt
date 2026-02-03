@@ -7,4 +7,4 @@ plotly
 scipy
 pylatexenc
 reportlab
-
+kaleido
