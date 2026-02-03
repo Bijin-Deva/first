@@ -503,9 +503,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
             
             st.pyplot(fig_circuit)
             # --- Save circuit diagram for report ---
-            tmp_circuit_img = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-            fig_circuit.savefig(tmp_circuit_img.name, dpi=300, bbox_inches="tight")
-
+            
 
             # --- Measurement Simulation & Histogram ---
             st.header("Measurement Outcomes")
@@ -550,8 +548,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     yaxis_title="Counts",
                 )
                 st.plotly_chart(hist_fig, use_container_width=True)
-                tmp_hist = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                hist_fig.write_image(tmp_hist.name, scale=3)
+                
 
                 # --- Raw Counts Display ---
                 st.subheader("Raw Measurement Counts")
@@ -634,8 +631,6 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                     # Display Bloch Sphere first
                     fig = create_interactive_bloch_sphere(bloch_vector)
                     st.plotly_chart(fig, use_container_width=True, key=f"bloch_sphere_{i}")
-                    # --- Save Bloch sphere for report ---
-                    tmp_bloch = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
                     
                     
                     # Display analysis below the sphere
@@ -667,6 +662,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
