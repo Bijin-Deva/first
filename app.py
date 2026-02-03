@@ -13,7 +13,10 @@ from qiskit_aer.noise import (
     phase_damping_error,
     ReadoutError
 )
-
+st.set_page_config(
+    page_title="Quantum Circuit Simulator",
+    layout="wide"
+)
 
 
 # --- Session State Initialization ---
@@ -566,6 +569,7 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
