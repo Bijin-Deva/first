@@ -24,6 +24,82 @@ import os
 
 # --- Page Configuration ---
 st.set_page_config(layout="wide", page_title="Quantum Circuit Simulator")
+st.markdown("""
+<style>
+
+/* =========================
+   PRINT-ONLY CONTENT CONTROL
+   ========================= */
+
+/* Hide report-only sections during normal app use */
+.print-only {
+  display: none;
+}
+
+/* =========================
+   ACADEMIC PRINT STYLES
+   ========================= */
+@media print {
+
+  /* Show report-only sections when printing */
+  .print-only {
+    display: block;
+  }
+
+  body {
+    font-family: "Times New Roman", serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: black;
+    overflow: visible !important;
+  }
+
+  .stApp {
+    overflow: visible !important;
+  }
+
+  /* Hide UI controls */
+  .stSidebar,
+  button,
+  input,
+  textarea {
+    display: none !important;
+  }
+
+  /* Academic headings */
+  h1 {
+    font-size: 20pt;
+    text-align: center;
+  }
+
+  h2 {
+    font-size: 16pt;
+    margin-top: 24px;
+    border-bottom: 1px solid #000;
+  }
+
+  h3 {
+    font-size: 14pt;
+    margin-top: 18px;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  /* Center figures */
+  img, canvas {
+    display: block;
+    margin: auto;
+  }
+
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # --- Session State Initialization ---
 if "undo_stack" not in st.session_state:
     st.session_state.undo_stack = []
@@ -422,6 +498,30 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
                             getattr(qc, gate.lower())(q)
             
             st.success("✅ Simulation complete!")
+            st.markdown('<div class="page-break"></div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="print-only">
+            
+            <div class="page-break"></div>
+            
+            <h1>Quantum Circuit Simulation Report</h1>
+            
+            <p><b>Tool:</b> Quantum Circuit Simulator<br>
+            <b>Methodology:</b> Density Matrix & Partial Trace<br>
+            <b>Visualization:</b> Bloch Sphere Representation</p>
+            
+            <h2>Abstract</h2>
+            
+            <p>
+            This report presents a quantum circuit simulation with per-qubit reduced
+            density matrix analysis. Each qubit’s quantum state is isolated using
+            partial tracing and visualized on the Bloch sphere. Noise effects are
+            optionally included to demonstrate mixed-state behavior and purity loss.
+            </p>
+            
+            </div>
+            """, unsafe_allow_html=True)
+
 
             # --- Circuit Visualization ---
             st.subheader("Circuit Diagram")
@@ -619,5 +719,6 @@ if st.button('▶️ Execute', type="primary", use_container_width=True):
         st.error(f"Circuit Error: {e}")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
